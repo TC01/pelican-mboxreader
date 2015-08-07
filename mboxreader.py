@@ -33,7 +33,7 @@ def set_default_settings(settings):
 	settings.setdefault('MBOX_PATH', 'input.mbox')
 	settings.setdefault('MBOX_CATEGORY', 'Mailbox')
 	settings.setdefault('MBOX_AUTHOR_STRING', 'via email')
-	
+
 def init_default_config(pelican):
 	from pelican.settings import DEFAULT_CONFIG
 	set_default_settings(DEFAULT_CONFIG)
@@ -49,7 +49,7 @@ def plaintext_to_html(plaintext):
 	return content
 
 class MboxGenerator(ArticlesGenerator):
-	
+
 	def __init__(self, *args, **kwargs):
 		"""initialize properties"""
 		self.articles = []  # only articles in default language
@@ -58,7 +58,11 @@ class MboxGenerator(ArticlesGenerator):
 		self.categories = defaultdict(list)
 		self.authors = defaultdict(list)
 		super(MboxGenerator, self).__init__(*args, **kwargs)
-		
+
+	# For now, don't generate feeds.
+	def generate_feeds(self, writer):
+		return
+
 	def generate_pages(self, writer):
 		"""Generate the pages on the disk"""
 		write = partial(writer.write_file, relative_urls=self.settings['RELATIVE_URLS'])
@@ -98,18 +102,18 @@ class MboxGenerator(ArticlesGenerator):
 			# As a hack to avoid dealing with the fact that names can collide.
 			author += ' ' + self.settings.get('MBOX_AUTHOR_STRING')
 			authorObject = BaseReader(self.settings).process_metadata('author', author)
-			
+
 			# Get date object, using python-dateutil as an easy hack.
 			# If there is no date in the message, abort, we shouldn't bother.
 			if message['date'] is None:
 				continue
 			date = parser.parse(message['date'])
 			monthYear = date.strftime('%B_%Y')
-			
+
 			# Get title and slug; build year + month into slug.
 			subject = message['subject']
 			slug = os.path.join(monthYear, slugify(subject))
-			
+
 			# Hack to handle multiple messages with the same subject.
 			if slug in slugs:
 				slug += "_%d"
