@@ -24,6 +24,9 @@ try:
 except ImportError:
     Markdown = False  # NOQA
 
+# The logger.
+logger = logging.getLogger()
+
 # Settings methods, adapted from tag-cloud plugin.
 # https://github.com/getpelican/pelican-plugins/blob/master/tag_cloud/tag_cloud.py
 def set_default_settings(settings):
@@ -72,11 +75,11 @@ class MboxGenerator(ArticlesGenerator):
 
 	def generate_context(self):
 		try:
+			if not os.path.exists(self.settings.get('MBOX_PATH')):
+				raise RuntimeError
 			mbox = mailbox.mbox(self.settings.get('MBOX_PATH'))
 		except:
 			logger.error('Could not process mbox file %s', self.settings.get('MBOX_PATH'))
-			# May not work properly.
-			self._add_failed_source_path(self.settings.get('MBOX_PATH'))
 			return
 
 		category = BaseReader(self.settings).process_metadata('category', self.settings.get('MBOX_CATEGORY'))
@@ -145,13 +148,17 @@ class MboxGenerator(ArticlesGenerator):
 				plaintext = unicode(message.get_payload(decode=True), charset, "ignore").encode('ascii', 'replace')
 				content = plaintext_to_html(plaintext)
 
-
 			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject], 'slug':slug}
 			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=self.settings.get('MBOX_PATH'), context=self.context)
 			#article.content()
 			# This seems like it cannot happen... but it does without fail. 3.3?
 			article.author = article.authors[0]
 			all_articles.append(article)
+
+		# Log that we did stuff.
+		numArticles = len(all_articles)
+		print('Read in %d messages from %s and converted to articles in category %s.' % (numArticles, 
+			  self.settings.get('MBOX_PATH'), self.settings.get('MBOX_CATEGORY')))
 
 		# Continue with the rest of ArticleGenerator.
 		# Code adapted from https://github.com/getpelican/pelican/blob/master/pelican/generators.py#L548
