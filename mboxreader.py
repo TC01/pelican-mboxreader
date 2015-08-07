@@ -4,6 +4,7 @@ from pelican.contents import Article, Author
 from pelican.utils import process_translations
 from pelican.readers import BaseReader
 
+from itertools import chain, groupby
 from operator import attrgetter, itemgetter
 from collections import defaultdict
 from functools import partial
@@ -38,6 +39,16 @@ class MboxGenerator(ArticlesGenerator):
 		self.authors = defaultdict(list)
 		super(MboxGenerator, self).__init__(*args, **kwargs)
 
+	def generate_articles(self, write):
+		"""Generate the articles."""
+		for article in chain(self.translations, self.articles):
+			#self.article = article
+			#self._update_context(('article',))
+			#output = self.get_template(article.template).render(self.context)
+			write(article.save_as, self.get_template(article.template),
+				self.context, article=article, category=article.category,
+				override_output=hasattr(article, 'override_save_as'))
+
 	def generate_pages(self, writer):
 		"""Generate the pages on the disk"""
 		write = partial(writer.write_file, relative_urls=self.settings['RELATIVE_URLS'])
@@ -50,7 +61,7 @@ class MboxGenerator(ArticlesGenerator):
 
 		# and subfolders after that
 		self.generate_categories(write)
-		#self.generate_authors(write)
+		self.generate_authors(write)
 
 	def generate_context(self):
 		try:
@@ -72,6 +83,8 @@ class MboxGenerator(ArticlesGenerator):
 			author = author[:author.find(' <')]
 			author = author.replace('"', '').replace("'", '')
 			
+			authorObject = BaseReader(self.settings).process_metadata('author', author)
+			
 			subject = message['subject']
 			# Hack to handle multiple subjects.
 			# This is bad because the subject is also the title; we should slugify the title first.
@@ -85,12 +98,11 @@ class MboxGenerator(ArticlesGenerator):
 				subject = testSubject
 			subjects.append(subject)
 
-
 			date = parser.parse(message['date'])
 			content = Markdown().convert(message.get_payload())
 
-			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[author]}
-			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=None, context=self)
+			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject]}
+			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=mboxPath, context=self)
 			# This seems like it cannot happen... but it does without fail. 3.3?
 			article.author = article.authors[0]
 			all_articles.append(article)
