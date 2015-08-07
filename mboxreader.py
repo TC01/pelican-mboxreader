@@ -1,7 +1,7 @@
 from pelican import signals
 from pelican.generators import ArticlesGenerator
 from pelican.contents import Article, Page, Static, is_valid_content
-from pelican.utils import copy, process_translations, mkdir_p, DateFormatter
+from pelican.utils import copy, process_translations, mkdir_p, DateFormatter, slugify
 from pelican.readers import BaseReader, Readers
 
 from pelican import signals
@@ -79,7 +79,7 @@ class MboxGenerator(ArticlesGenerator):
 
 		# Loop over all messages in the mbox and turn them into an article object.
 		all_articles = []
-		subjects = []
+		slugs = []
 		for message in mbox.itervalues():
 			# Get author name.
 			author = message['from']
@@ -88,23 +88,25 @@ class MboxGenerator(ArticlesGenerator):
 			
 			authorObject = BaseReader(self.settings).process_metadata('author', author)
 			
+			# Get title and slug.
 			subject = message['subject']
-			# Hack to handle multiple subjects.
-			# This is bad because the subject is also the title; we should slugify the title first.
-			if subject in subjects:
-				subject += "%d"
+			slug = slugify(subject)
+			
+			# Hack to handle multiple messages with the same subject.
+			if slug in slugs:
+				slug += "_%d"
 				count = 2
-				testSubject = subject % count
-				while testSubject in subjects:
+				testSlug = slug % count
+				while testSlug in slugs:
 					count += 1
-					testSubject = subject % count
-				subject = testSubject
-			subjects.append(subject)
+					testSlug = slug % count
+				slug = testSlug
+			slugs.append(slug)
 
 			date = parser.parse(message['date'])
 			content = Markdown().convert(message.get_payload())
 
-			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject]}
+			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject], 'slug':slug}
 			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=self.settings.get('MBOX_PATH'), context=self.context)
 			#article.content()
 			# This seems like it cannot happen... but it does without fail. 3.3?

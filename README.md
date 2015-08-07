@@ -10,11 +10,6 @@ This was written to support easy interoperation between pelican and mailman
 
 Yes, mostly! Although:
 
-* The subject should be slugified, and then _2 or _3 or etc. apprehended if the
-subject conflicts with a previous email in the mailbox. Right now these things
-happen in the wrong order (Thus distorting the actual subject rather than just the
-slug).
-
 * For [hilarious reasons](https://osdir.com/ml/file-systems.openafs.general/2002-09/msg00072.html)
 we must ensure there aren't too many files in a directory; also it would become untidy.
 We should probably put Year+Month/ as part of the slug.
@@ -30,6 +25,11 @@ generators try to write it, I am *not* sure how to fix this.
 * Dependencies on e.g. python-dateutil to parse email dates should be imported better.
 
 * Right now we only support *one* input mbox. Obviously, it'd be trivial to support more.
+
+* Unit testing... somehow.
+
+* Code quality cleanup, before submitting upstream. Mainly tabs -> spaces and enforcement
+of the PEP8 80 characters a line rule.
 
 ## How does it work?
 
