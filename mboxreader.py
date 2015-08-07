@@ -24,14 +24,12 @@ try:
 except ImportError:
     Markdown = False  # NOQA
 
-# For now hardcode this.
-
-
 # Settings methods, adapted from tag-cloud plugin.
 # https://github.com/getpelican/pelican-plugins/blob/master/tag_cloud/tag_cloud.py
 def set_default_settings(settings):
 	settings.setdefault('MBOX_PATH', 'input.mbox')
 	settings.setdefault('MBOX_CATEGORY', 'Mailbox')
+	settings.setdefault('MBOX_AUTHOR_STRING', 'via email')
 	
 def init_default_config(pelican):
 	from pelican.settings import DEFAULT_CONFIG
@@ -85,6 +83,8 @@ class MboxGenerator(ArticlesGenerator):
 			author = message['from']
 			author = author[:author.find(' <')]
 			author = author.replace('"', '').replace("'", '')
+			# As a hack to avoid dealing with the fact that names can collide.
+			author += self.settings.get('MBOX_AUTHOR_STRING')
 			authorObject = BaseReader(self.settings).process_metadata('author', author)
 			
 			# Get date object, using python-dateutil as an easy hack.

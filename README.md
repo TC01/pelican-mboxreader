@@ -10,13 +10,10 @@ This was written to support easy interoperation between pelican and mailman
 
 Yes, mostly! Although:
 
-* Nothing is done if there is a potential conflict between authors from email and authors
-posting regularly-- there will be an issue because both MboxGenerator and ArticlesGenerator
-will try to create author pages. Easy solution is to add a "via email" to the author names;
-a more complicated solution is... well... more complicated.
-
-* As a similar issue, index.html will not have any posts from email because both article
-generators try to write it, I am *not* sure how to fix this.
+* index.html will not have any posts from email because both article generators would
+try to write it. I "fixed" this by preventing MboxGenerator from writing index.html.
+Not sure how to fix. Note that this also means author names can potentially collide
+(see below for a built-in workaround).
 
 * Dependencies on e.g. python-dateutil to parse email dates should be imported better.
 
@@ -40,6 +37,16 @@ MBOX_CATEGORY = 'Name of Mbox Category'
 
 ```MBOX_PATH``` defaults to "input.mbox" in the current directory. If it is not present,
 Pelican should behave gracefully. ```MBOX_CATEGORY`` defaults to "Mailbox".
+
+### Other Configuration Options
+
+```
+MBOX_AUTHOR_STRING = 'via email'
+```
+
+This string is appended to the end of authors created via mbox. This has to happen because
+the MboxGenerator class is a superclass of the ArticleGenerator class and both will try
+to write separate versions of the same pages.
 
 ## Is support for other mailbox types (maildir, etc.) possible?
 
