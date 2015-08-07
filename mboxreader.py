@@ -25,8 +25,19 @@ except ImportError:
     Markdown = False  # NOQA
 
 # For now hardcode this.
-mboxPath = '/home/bjr/Programming/python/pelican/security.mbox'
-categoryName = 'Security'
+
+
+# Settings methods, adapted from tag-cloud plugin.
+# https://github.com/getpelican/pelican-plugins/blob/master/tag_cloud/tag_cloud.py
+def set_default_settings(settings):
+	settings.setdefault('MBOX_PATH', 'input.mbox')
+	settings.setdefault('MBOX_CATEGORY', 'Mailbox')
+	
+def init_default_config(pelican):
+	from pelican.settings import DEFAULT_CONFIG
+	set_default_settings(DEFAULT_CONFIG)
+	if pelican:
+		set_default_settings(pelican.settings)
 
 class MboxGenerator(ArticlesGenerator):
 	
@@ -57,14 +68,14 @@ class MboxGenerator(ArticlesGenerator):
 
 	def generate_context(self):
 		try:
-			mbox = mailbox.mbox(mboxPath)
+			mbox = mailbox.mbox(self.settings.get('MBOX_PATH'))
 		except:
-			logger.error('Could not process mbox file %s', mboxPath)
+			logger.error('Could not process mbox file %s', self.settings.get('MBOX_PATH'))
 			# May not work properly.
-			self._add_failed_source_path(mboxPath)
+			self._add_failed_source_path(self.settings.get('MBOX_PATH'))
 			return
 
-		category = BaseReader(self.settings).process_metadata('category', categoryName)
+		category = BaseReader(self.settings).process_metadata('category', self.settings.get('MBOX_CATEGORY'))
 
 		# Loop over all messages in the mbox and turn them into an article object.
 		all_articles = []
@@ -94,7 +105,7 @@ class MboxGenerator(ArticlesGenerator):
 			content = Markdown().convert(message.get_payload())
 
 			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject]}
-			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=mboxPath, context=self.context)
+			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=self.settings.get('MBOX_PATH'), context=self.context)
 			#article.content()
 			# This seems like it cannot happen... but it does without fail. 3.3?
 			article.author = article.authors[0]
@@ -140,5 +151,5 @@ def get_generators(pelican_object):
 	return MboxGenerator
 
 def register():
+	signals.initialized.connect(init_default_config)
 	signals.get_generators.connect(get_generators)
-	pass

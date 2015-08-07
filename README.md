@@ -15,12 +15,35 @@ subject conflicts with a previous email in the mailbox. Right now these things
 happen in the wrong order (Thus distorting the actual subject rather than just the
 slug).
 
-* Settings need to be created. Right now things like the category name and the
-path to the mbox file are hardcoded. Bad, obviously.
-
 * For [hilarious reasons](https://osdir.com/ml/file-systems.openafs.general/2002-09/msg00072.html)
 we must ensure there aren't too many files in a directory; also it would become untidy.
 We should probably put Year+Month/ as part of the slug.
+
+* Nothing is done if there is a potential conflict between authors from email and authors
+posting regularly-- there will be an issue because both MboxGenerator and ArticlesGenerator
+will try to create author pages. Easy solution is to add a "via email" to the author names;
+a more complicated solution is... well... more complicated.
+
+* As a similar issue, index.html will not have any posts from email because both article
+generators try to write it, I am *not* sure how to fix this.
+
+* Dependencies on e.g. python-dateutil to parse email dates should be imported better.
+
+* Right now we only support *one* input mbox. Obviously, it'd be trivial to support more.
+
+## How does it work?
+
+Install the plugin like any other pelican plugin.
+
+Then add the following settings to the configuration:
+
+```
+MBOX_PATH = '/path/to/mail.box'
+MBOX_CATEGORY = 'Name of Mbox Category'
+```
+
+```MBOX_PATH``` defaults to "input.mbox" in the current directory. If it is not present,
+Pelican should behave gracefully. ```MBOX_CATEGORY`` defaults to "Mailbox".
 
 ## Is support for other mailbox types (maildir, etc.) possible?
 
