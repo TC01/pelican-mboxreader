@@ -81,13 +81,19 @@ class MboxGenerator(ArticlesGenerator):
 		for message in mbox.itervalues():
 			# Get author name.
 			author = message['from']
-			author = author[:author.find(' <')]
-			author = author.replace('"', '').replace("'", '')
+			if author is None:
+				author = 'Unknown'
+			else:
+				author = author[:author.find(' <')]
+				author = author.replace('"', '').replace("'", '')
 			# As a hack to avoid dealing with the fact that names can collide.
-			author += self.settings.get('MBOX_AUTHOR_STRING')
+			author += ' ' + self.settings.get('MBOX_AUTHOR_STRING')
 			authorObject = BaseReader(self.settings).process_metadata('author', author)
 			
 			# Get date object, using python-dateutil as an easy hack.
+			# If there is no date in the message, abort, we shouldn't bother.
+			if message['date'] is None:
+				continue
 			date = parser.parse(message['date'])
 			monthYear = date.strftime('%B_%Y')
 			
@@ -106,7 +112,20 @@ class MboxGenerator(ArticlesGenerator):
 				slug = testSlug
 			slugs.append(slug)
 
-			content = Markdown().convert(message.get_payload())
+			# Ignore multipart messages for now.
+			# Code adapted from Stackoverflow for parsing email messages.
+			# https://stackoverflow.com/questions/4824376/parse-multi-part-email-with-sub-parts-using-python
+			if message.is_multipart():
+				continue
+			
+			charset = message.get_content_charset()
+			if charset is None or charset == 'x-unknown':
+				charset = 'us-ascii'
+			plaintext = unicode(message.get_payload(decode=True), charset, "ignore").encode('ascii', 'replace')
+			try:
+				content = Markdown().convert(plaintext)
+			except:
+				content = plaintext
 
 			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject], 'slug':slug}
 			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=self.settings.get('MBOX_PATH'), context=self.context)
