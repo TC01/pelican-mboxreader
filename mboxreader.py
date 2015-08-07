@@ -1,5 +1,5 @@
 from pelican import signals
-from pelican.generators import ArticlesGenerator
+from pelican.generators import ArticlesGenerator, Generator
 from pelican.contents import Article, Page, Static, is_valid_content
 from pelican.utils import copy, process_translations, mkdir_p, DateFormatter, slugify
 from pelican.readers import BaseReader, Readers
@@ -52,9 +52,7 @@ class MboxGenerator(ArticlesGenerator):
 		self.articles = []  # only articles in default language
 		self.translations = []
 		self.dates = {}
-		self.tags = defaultdict(list)
 		self.categories = defaultdict(list)
-		self.related_posts = []
 		self.authors = defaultdict(list)
 		super(MboxGenerator, self).__init__(*args, **kwargs)
 		
@@ -159,7 +157,9 @@ class MboxGenerator(ArticlesGenerator):
 		# Code adapted from https://github.com/getpelican/pelican/blob/master/pelican/generators.py#L548
 
 		# ARTICLE_ORDER_BY doesn't exist in 3.3, yay Fedora 21 package maintainers.
-		self.articles, self.translations = process_translations(all_articles)#, order_by=self.settings['ARTICLE_ORDER_BY'])
+		articles, translations = process_translations(all_articles)#, order_by=self.settings['ARTICLE_ORDER_BY'])
+		self.articles.extend(articles)
+		self.translations.extend(translations)
 
 		# Disabled for 3.3 compatibility, great.
 		#signals.article_generator_pretaxonomy.send(self)
@@ -189,7 +189,7 @@ class MboxGenerator(ArticlesGenerator):
 		#self.readers.save_cache()
 
 		# And finish.
-		signals.article_generator_finalized.send(self)
+		#signals.article_generator_finalized.send(self)
 
 def get_generators(pelican_object):
 	return MboxGenerator
