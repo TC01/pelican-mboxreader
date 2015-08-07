@@ -10,10 +10,6 @@ This was written to support easy interoperation between pelican and mailman
 
 Yes, mostly! Although:
 
-* For [hilarious reasons](https://osdir.com/ml/file-systems.openafs.general/2002-09/msg00072.html)
-we must ensure there aren't too many files in a directory; also it would become untidy.
-We should probably put Year+Month/ as part of the slug.
-
 * Nothing is done if there is a potential conflict between authors from email and authors
 posting regularly-- there will be an issue because both MboxGenerator and ArticlesGenerator
 will try to create author pages. Easy solution is to add a "via email" to the author names;

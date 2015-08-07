@@ -13,7 +13,7 @@ from functools import partial
 
 import mailbox
 import logging
-import random
+import os
 
 # Other dependency! dateutil.
 from dateutil import parser
@@ -85,12 +85,15 @@ class MboxGenerator(ArticlesGenerator):
 			author = message['from']
 			author = author[:author.find(' <')]
 			author = author.replace('"', '').replace("'", '')
-			
 			authorObject = BaseReader(self.settings).process_metadata('author', author)
 			
-			# Get title and slug.
+			# Get date object, using python-dateutil as an easy hack.
+			date = parser.parse(message['date'])
+			monthYear = date.strftime('%B_%Y')
+			
+			# Get title and slug; build year + month into slug.
 			subject = message['subject']
-			slug = slugify(subject)
+			slug = os.path.join(monthYear, slugify(subject))
 			
 			# Hack to handle multiple messages with the same subject.
 			if slug in slugs:
@@ -103,7 +106,6 @@ class MboxGenerator(ArticlesGenerator):
 				slug = testSlug
 			slugs.append(slug)
 
-			date = parser.parse(message['date'])
 			content = Markdown().convert(message.get_payload())
 
 			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject], 'slug':slug}
