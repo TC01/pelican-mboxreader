@@ -37,6 +37,14 @@ def init_default_config(pelican):
 	if pelican:
 		set_default_settings(pelican.settings)
 
+def plaintext_to_html(plaintext):
+	# Attempt to use markdown as a basic plaintext -> HTML converter.
+	try:
+		content = Markdown().convert(plaintext)
+	except:
+		content = plaintext
+	return content
+
 class MboxGenerator(ArticlesGenerator):
 	
 	def __init__(self, *args, **kwargs):
@@ -112,20 +120,33 @@ class MboxGenerator(ArticlesGenerator):
 				slug = testSlug
 			slugs.append(slug)
 
-			# Ignore multipart messages for now.
 			# Code adapted from Stackoverflow for parsing email messages.
 			# https://stackoverflow.com/questions/4824376/parse-multi-part-email-with-sub-parts-using-python
+			# Code is clumsy, should be refactored.
 			if message.is_multipart():
-				continue
-			
-			charset = message.get_content_charset()
-			if charset is None or charset == 'x-unknown':
-				charset = 'us-ascii'
-			plaintext = unicode(message.get_payload(decode=True), charset, "ignore").encode('ascii', 'replace')
-			try:
-				content = Markdown().convert(plaintext)
-			except:
-				content = plaintext
+				plaintext = None
+				html = None
+				for part in message.get_payload():
+					charset = message.get_content_charset()
+					if charset is None or charset == 'x-unknown':
+						charset = 'us-ascii'
+					if part.get_content_type() == 'text/plain':
+						plaintext = unicode(part.get_payload(decode=True), charset, "ignore").encode('ascii', 'replace')
+					if part.get_content_type() == 'text/html':
+						html = unicode(part.get_payload(decode=True), charset, "ignore").encode('ascii', 'replace')
+				if plaintext is None and html is None:
+					continue
+				elif plaintext is None:
+					content = html
+				else:
+					content = plaintext_to_html(plaintext)
+			else:
+				charset = message.get_content_charset()
+				if charset is None or charset == 'x-unknown':
+					charset = 'us-ascii'
+				plaintext = unicode(message.get_payload(decode=True), charset, "ignore").encode('ascii', 'replace')
+				content = plaintext_to_html(plaintext)
+
 
 			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject], 'slug':slug}
 			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=self.settings.get('MBOX_PATH'), context=self.context)
