@@ -8,13 +8,7 @@ This was written to support easy interoperation between pelican and mailman
 
 ## Does this work?
 
-Not quite yet:
-
-* Pelican refuses to actually put any *content* into the mail-generated articles,
-for reasons I don't yet understand. article.get_content() returns the right
-thing.
-
-* Code was written on a machine with pelican 3.3, it needs to be tested against 3.6.
+Yes, mostly! Although:
 
 * The subject should be slugified, and then _2 or _3 or etc. apprehended if the
 subject conflicts with a previous email in the mailbox. Right now these things
@@ -22,7 +16,7 @@ happen in the wrong order (Thus distorting the actual subject rather than just t
 slug).
 
 * Settings need to be created. Right now things like the category name and the
-path to the mbox file
+path to the mbox file are hardcoded. Bad, obviously.
 
 * For [hilarious reasons](https://osdir.com/ml/file-systems.openafs.general/2002-09/msg00072.html)
 we must ensure there aren't too many files in a directory; also it would become untidy.
