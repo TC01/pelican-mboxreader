@@ -11,9 +11,13 @@ from operator import attrgetter, itemgetter
 from collections import defaultdict
 from functools import partial
 
+from django.utils import timezone
+
+import datetime
 import mailbox
 import logging
 import os
+import pytz
 
 # Other dependency! dateutil.
 from dateutil import parser
@@ -75,19 +79,32 @@ class MboxGenerator(ArticlesGenerator):
 
 	def generate_pages(self, writer):
 		"""Generate the pages on the disk"""
-		write = partial(writer.write_file, relative_urls=self.settings['RELATIVE_URLS'])
+		write = partial(writer.write_file, relative_urls=self.settings['RELATIVE_URLS'], override_output=True)
 
 		# to minimize the number of relative path stuff modification
 		# in writer, articles pass first
 		self.generate_articles(write)
 		self.generate_period_archives(write)
-		#self.generate_direct_templates(write)
+		self.generate_direct_templates(write)
 
 		# and subfolders after that
 		self.generate_categories(write)
 		self.generate_authors(write)
 
+	def generate_articles(self, write):
+		"""Generate the articles."""
+		# Hm... this is a bit clunky; it overrides the override_output setting.
+		# Maybe that's not a problem; I'm not sure how else to do it and I think it's okay.
+		for article in chain(self.translations, self.articles):
+			write(article.save_as, self.get_template(article.template),
+					self.context, article=article, category=article.category,
+					override_output=True, blog=True)
+
 	def generate_context(self):
+		
+		# Update the context.
+		self.articles = self.context['articles']  # only articles in default language
+		
 		try:
 			if not os.path.exists(self.settings.get('MBOX_PATH')):
 				raise RuntimeError
@@ -161,10 +178,10 @@ class MboxGenerator(ArticlesGenerator):
 					charset = 'us-ascii'
 				plaintext = unicode(message.get_payload(decode=True), charset, "ignore").encode('ascii', 'replace')
 				content = plaintext_to_html(plaintext, self.settings.get('MBOX_MARKDOWNIFY'))
-
+			
 			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject], 'slug':slug}
 			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=self.settings.get('MBOX_PATH'), context=self.context)
-			#article.content()
+
 			# This seems like it cannot happen... but it does without fail. 3.3?
 			article.author = article.authors[0]
 			all_articles.append(article)
@@ -188,11 +205,16 @@ class MboxGenerator(ArticlesGenerator):
 		for article in self.articles:
 			# only main articles are listed in categories and tags
 			# not translations
+			# We have to use django for this, unfortunately.
+			if article.date.tzinfo is None:
+				article.date = pytz.UTC.localize(article.date)
 			self.categories[article.category].append(article)
 			for author in getattr(article, 'authors', []):
 				self.authors[author].append(article)
 
-		self.dates = list(self.articles)
+		# This may not technically be right, but... sort the articles by date too.
+		self.articles = list(self.articles)
+		self.dates = self.articles
 		self.dates.sort(key=attrgetter('date'), reverse=self.context['NEWEST_FIRST_ARCHIVES'])
 
 		# and generate the output :)

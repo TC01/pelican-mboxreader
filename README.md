@@ -8,12 +8,11 @@ This was written to support easy interoperation between pelican and mailman
 
 ## Does this work?
 
-Yes, mostly! Although:
+Yes, mostly!
 
-* index.html will not have any posts from email because both article generators would
-try to write it. I "fixed" this by preventing MboxGenerator from writing index.html.
-Not sure how to fix. Note that this also means author names can potentially collide
-(see below for a built-in workaround).
+### Some future work
+
+(Merge with issues tracker now that I have one).
 
 * Dependencies on e.g. python-dateutil to parse email dates should be imported better.
 
