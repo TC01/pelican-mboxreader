@@ -33,6 +33,7 @@ def set_default_settings(settings):
 	settings.setdefault('MBOX_PATH', 'input.mbox')
 	settings.setdefault('MBOX_CATEGORY', 'Mailbox')
 	settings.setdefault('MBOX_AUTHOR_STRING', 'via email')
+	settings.setdefault('MBOX_MARKDOWNIFY', False)
 
 def init_default_config(pelican):
 	from pelican.settings import DEFAULT_CONFIG
@@ -40,12 +41,21 @@ def init_default_config(pelican):
 	if pelican:
 		set_default_settings(pelican.settings)
 
-def plaintext_to_html(plaintext):
-	# Attempt to use markdown as a basic plaintext -> HTML converter.
+def plaintext_to_html(plaintext, markdownify=False):
+	# Attempt to use markdown as a basic plaintext -> HTML converter, if told to do so.
+	# If we fail, or were *not* told to do so, insert <p> tags as appropriate.
 	try:
+		if not markdownify:
+			raise RuntimeError
 		content = Markdown().convert(plaintext)
 	except:
-		content = plaintext
+		content = ''
+		plaintext = plaintext.replace('\r\n', '\n')
+		strings = plaintext.split('\n\n')
+		for paragraph in strings:
+			paragraph = paragraph.replace('\n', '<br/>')
+			content += '<p>' + paragraph + '</p>\n\n'
+		
 	return content
 
 class MboxGenerator(ArticlesGenerator):
@@ -144,13 +154,13 @@ class MboxGenerator(ArticlesGenerator):
 				elif plaintext is None:
 					content = html
 				else:
-					content = plaintext_to_html(plaintext)
+					content = plaintext_to_html(plaintext, self.settings.get('MBOX_MARKDOWNIFY'))
 			else:
 				charset = message.get_content_charset()
 				if charset is None or charset == 'x-unknown':
 					charset = 'us-ascii'
 				plaintext = unicode(message.get_payload(decode=True), charset, "ignore").encode('ascii', 'replace')
-				content = plaintext_to_html(plaintext)
+				content = plaintext_to_html(plaintext, self.settings.get('MBOX_MARKDOWNIFY'))
 
 			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject], 'slug':slug}
 			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=self.settings.get('MBOX_PATH'), context=self.context)
