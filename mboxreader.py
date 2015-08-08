@@ -11,8 +11,6 @@ from operator import attrgetter, itemgetter
 from collections import defaultdict
 from functools import partial
 
-from django.utils import timezone
-
 import datetime
 import mailbox
 import logging
