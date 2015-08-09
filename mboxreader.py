@@ -18,7 +18,10 @@ import os
 import pytz
 
 # Other dependency! dateutil.
-from dateutil import parser
+try:
+	from dateutil import parser
+except ImportError:	#NOQA?
+	parser = False
 
 # Markdown-- a half-decent plaintext -> HTML converter, for now.
 try:
@@ -105,7 +108,11 @@ class MboxGenerator(ArticlesGenerator):
 			# If there is no date in the message, abort, we shouldn't bother.
 			if message['date'] is None:
 				continue
-			date = parser.parse(message['date'])
+			if parser:
+				date = parser.parse(message['date'])
+			else:
+				logger.error('No python-dateutil, we cannot continue as date formats cannot be parsed. ')
+				continue
 			monthYear = date.strftime('%B_%Y')
 
 			# Get title and slug; build year + month into slug.

@@ -6,20 +6,10 @@ generate articles from all the entries in the mailbox.
 This was written to support easy interoperation between pelican and mailman
 (which creates mbox archives).
 
-## Does this work?
+## Do I need other dependencies?
 
-Yes, mostly!
-
-### Some future work
-
-(Merge with issues tracker now that I have one).
-
-* Dependencies on e.g. python-dateutil to parse email dates should be imported better.
-
-* Unit testing... somehow.
-
-* Code quality cleanup, before submitting upstream. Mainly tabs -> spaces and enforcement
-of the PEP8 80 characters a line rule.
+Yes; you need python's dateutil module (so dates in emails can be parsed without
+assuming a standard time format).
 
 ## How does it work?
 
