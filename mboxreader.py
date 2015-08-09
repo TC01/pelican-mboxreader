@@ -32,8 +32,8 @@ logger = logging.getLogger()
 # Settings methods, adapted from tag-cloud plugin.
 # https://github.com/getpelican/pelican-plugins/blob/master/tag_cloud/tag_cloud.py
 def set_default_settings(settings):
-	settings.setdefault('MBOX_PATH', 'input.mbox')
-	settings.setdefault('MBOX_CATEGORY', 'Mailbox')
+	settings.setdefault('MBOX_PATH', '[input.mbox]')
+	settings.setdefault('MBOX_CATEGORY', '[Mailbox]')
 	settings.setdefault('MBOX_AUTHOR_STRING', 'via email')
 	settings.setdefault('MBOX_MARKDOWNIFY', False)
 
@@ -71,51 +71,24 @@ class MboxGenerator(ArticlesGenerator):
 		self.authors = defaultdict(list)
 		super(MboxGenerator, self).__init__(*args, **kwargs)
 
-	# For now, don't generate feeds.
-	def generate_feeds(self, writer):
-		return
-
-	def generate_pages(self, writer):
-		"""Generate the pages on the disk"""
-		write = partial(writer.write_file, relative_urls=self.settings['RELATIVE_URLS'], override_output=True)
-
-		# to minimize the number of relative path stuff modification
-		# in writer, articles pass first
-		self.generate_articles(write)
-		self.generate_period_archives(write)
-		self.generate_direct_templates(write)
-
-		# and subfolders after that
-		self.generate_categories(write)
-		self.generate_authors(write)
-
-	def generate_articles(self, write):
-		"""Generate the articles."""
-		# Hm... this is a bit clunky; it overrides the override_output setting.
-		# Maybe that's not a problem; I'm not sure how else to do it and I think it's okay.
-		for article in chain(self.translations, self.articles):
-			write(article.save_as, self.get_template(article.template),
-					self.context, article=article, category=article.category,
-					override_output=True, blog=True)
-
-	def generate_context(self):
+	# Private helper function to generate 
+	def _generate_mbox_articles(self, mboxPath, mboxCategory):
 		
-		# Update the context.
-		self.articles = self.context['articles']  # only articles in default language
+		category = BaseReader(self.settings).process_metadata('category', mboxCategory)
 		
+		# Complain if the mbox path does not exist and is not readable.
 		try:
-			if not os.path.exists(self.settings.get('MBOX_PATH')):
+			if not os.path.exists(mboxPath):
 				raise RuntimeError
-			mbox = mailbox.mbox(self.settings.get('MBOX_PATH'))
+			mbox = mailbox.mbox(mboxPath)
 		except:
-			logger.error('Could not process mbox file %s', self.settings.get('MBOX_PATH'))
+			logger.error('Could not process mbox file %s', mboxPath)
 			return
-
-		category = BaseReader(self.settings).process_metadata('category', self.settings.get('MBOX_CATEGORY'))
-
+		
 		# Loop over all messages in the mbox and turn them into an article object.
 		all_articles = []
 		slugs = []
+		
 		for message in mbox.itervalues():
 			# Get author name.
 			author = message['from']
@@ -178,16 +151,64 @@ class MboxGenerator(ArticlesGenerator):
 				content = plaintext_to_html(plaintext, self.settings.get('MBOX_MARKDOWNIFY'))
 			
 			metadata = {'title':subject, 'date':date, 'category':category, 'authors':[authorObject], 'slug':slug}
-			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=self.settings.get('MBOX_PATH'), context=self.context)
+			article = Article(content=content, metadata=metadata, settings=self.settings, source_path=mboxPath, context=self.context)
 
 			# This seems like it cannot happen... but it does without fail. 3.3?
 			article.author = article.authors[0]
 			all_articles.append(article)
 
-		# Log that we did stuff.
-		numArticles = len(all_articles)
-		print('Read in %d messages from %s and converted to articles in category %s.' % (numArticles, 
-			  self.settings.get('MBOX_PATH'), self.settings.get('MBOX_CATEGORY')))
+		return all_articles
+		
+
+	# For now, don't generate feeds.
+	def generate_feeds(self, writer):
+		return
+
+	def generate_pages(self, writer):
+		"""Generate the pages on the disk"""
+		write = partial(writer.write_file, relative_urls=self.settings['RELATIVE_URLS'], override_output=True)
+
+		# to minimize the number of relative path stuff modification
+		# in writer, articles pass first
+		self.generate_articles(write)
+		self.generate_period_archives(write)
+		self.generate_direct_templates(write)
+
+		# and subfolders after that
+		self.generate_categories(write)
+		self.generate_authors(write)
+
+	def generate_articles(self, write):
+		"""Generate the articles."""
+		# Hm... this is a bit clunky; it overrides the override_output setting.
+		# Maybe that's not a problem; I'm not sure how else to do it and I think it's okay.
+		for article in chain(self.translations, self.articles):
+			write(article.save_as, self.get_template(article.template),
+					self.context, article=article, category=article.category,
+					override_output=True, blog=True)
+
+	def generate_context(self):
+		# Update the context.
+		self.articles = self.context['articles']  # only articles in default language
+		
+		# Complain if MBOX_PATH and MBOX_CATEGORY are not of the same length, complain.
+		mboxPaths = self.settings.get('MBOX_PATH')
+		mboxCategories = self.settings.get('MBOX_CATEGORY')
+		if len(mboxPaths) != len(mboxCategories) or len(mboxPaths) <= 0:
+			logger.error('MBOX_PATH and MBOX_CATEGORY not of equal length or non-empty.')
+			return
+		
+		all_articles = []
+		for i in xrange(len(mboxPaths)):
+			mboxPath = mboxPaths[i]
+			mboxCategory = mboxCategories[i]			
+
+			new_articles = self._generate_mbox_articles(mboxPath, mboxCategory)
+			all_articles.extend(new_articles)
+
+			# Log that we did stuff.
+			print('Read in %d messages from %s and converted to articles in category %s.' % (len(new_articles), mboxPath, mboxCategory))
+		print('Read in %d messages from mailboxes total.' % (len(all_articles)))
 
 		# Continue with the rest of ArticleGenerator.
 		# Code adapted from https://github.com/getpelican/pelican/blob/master/pelican/generators.py#L548

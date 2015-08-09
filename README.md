@@ -16,8 +16,6 @@ Yes, mostly!
 
 * Dependencies on e.g. python-dateutil to parse email dates should be imported better.
 
-* Right now we only support *one* input mbox. Obviously, it'd be trivial to support more.
-
 * Unit testing... somehow.
 
 * Code quality cleanup, before submitting upstream. Mainly tabs -> spaces and enforcement
@@ -30,12 +28,15 @@ Install the plugin like any other pelican plugin.
 Then add the following settings to the configuration:
 
 ```
-MBOX_PATH = '/path/to/mail.box'
-MBOX_CATEGORY = 'Name of Mbox Category'
+MBOX_PATH = ['/path/to/mail.box']
+MBOX_CATEGORY = ['Name of Mbox Category']
 ```
 
 ```MBOX_PATH``` defaults to "input.mbox" in the current directory. If it is not present,
 Pelican should behave gracefully. ```MBOX_CATEGORY`` defaults to "Mailbox".
+
+As you might gather from these settings being lists, mboxreader supports taking input
+from multiple Mailbox files. You must have one category name per mbox path.
 
 ### Other Configuration Options
 
@@ -46,6 +47,16 @@ MBOX_AUTHOR_STRING = 'via email'
 This string is appended to the end of authors created via mbox. This has to happen because
 the MboxGenerator class is a superclass of the ArticleGenerator class and both will try
 to write separate versions of the same pages.
+
+```
+MBOX_MARKDOWNIFY = False
+```
+
+This setting controls whether to feed input emails into Markdown or whether they should
+be converted "manually" (i.e. replacing newlines with paragraph tags and break tags as
+appropriate), which is the default. Markdown is the closest to "plaintext" (compare to
+reStructuredText) though in the future I'll likely add an option to use the rST parser
+instead.
 
 ## Is support for other mailbox types (maildir, etc.) possible?
 
