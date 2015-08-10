@@ -237,8 +237,12 @@ class MboxGenerator(ArticlesGenerator):
 			if article.date.tzinfo is None:
 				article.date = pytz.UTC.localize(article.date)
 			self.categories[article.category].append(article)
-			for author in getattr(article, 'authors', []):
-				self.authors[author].append(article)
+			# Support for Author and Authors.
+			if hasattr(article, 'author') and article.author.name != '':
+				self.authors[article.author].append(article)
+			else:
+				for author in getattr(article, 'authors', []):
+					self.authors[author].append(article)
 
 		# This may not technically be right, but... sort the articles by date too.
 		self.articles = list(self.articles)
