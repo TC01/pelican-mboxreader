@@ -98,7 +98,8 @@ class MboxGenerator(ArticlesGenerator):
 			if author is None:
 				author = 'Unknown'
 			else:
-				author = author[:author.find(' <')]
+				if '<' and '>' in author:
+					author = author[:author.find(' <')]
 				author = author.replace('"', '').replace("'", '')
 			# As a hack to avoid dealing with the fact that names can collide.
 			author += ' ' + self.settings.get('MBOX_AUTHOR_STRING')
