@@ -113,11 +113,11 @@ class MboxGenerator(ArticlesGenerator):
 			else:
 				logger.error('No python-dateutil, we cannot continue as date formats cannot be parsed. ')
 				continue
-			monthYear = date.strftime('%B_%Y')
+			monthYear = date.strftime('%B-%Y').lower()
 
 			# Get title and slug; build year + month into slug.
 			subject = message['subject']
-			slug = os.path.join(monthYear, slugify(subject))
+			slug = os.path.join(slugify(mboxCategory), monthYear, slugify(subject))
 
 			# Hack to handle multiple messages with the same subject.
 			if slug in slugs:
