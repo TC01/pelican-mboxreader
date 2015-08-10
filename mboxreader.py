@@ -37,7 +37,7 @@ logger = logging.getLogger()
 def set_default_settings(settings):
 	settings.setdefault('MBOX_PATH', '[input.mbox]')
 	settings.setdefault('MBOX_CATEGORY', '[Mailbox]')
-	settings.setdefault('MBOX_AUTHOR_STRING', 'via email')
+	settings.setdefault('MBOX_AUTHOR_STRING', '')
 	settings.setdefault('MBOX_MARKDOWNIFY', False)
 
 def init_default_config(pelican):
@@ -102,7 +102,8 @@ class MboxGenerator(ArticlesGenerator):
 					author = author[:author.find(' <')]
 				author = author.replace('"', '').replace("'", '')
 			# As a hack to avoid dealing with the fact that names can collide.
-			author += ' ' + self.settings.get('MBOX_AUTHOR_STRING')
+			if self.settings.get('MBOX_AUTHOR_STRING') is not None and self.settings.get('MBOX_AUTHOR_STRING') != '':
+				author += ' ' + self.settings.get('MBOX_AUTHOR_STRING')
 			authorObject = BaseReader(self.settings).process_metadata('author', author)
 
 			# Get date object, using python-dateutil as an easy hack.

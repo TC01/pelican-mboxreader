@@ -31,12 +31,12 @@ from multiple Mailbox files. You must have one category name per mbox path.
 ### Other Configuration Options
 
 ```
-MBOX_AUTHOR_STRING = 'via email'
+MBOX_AUTHOR_STRING = ''
 ```
 
-This string is appended to the end of authors created via mbox. This has to happen because
-the MboxGenerator class is a superclass of the ArticleGenerator class and both will try
-to write separate versions of the same pages.
+This string is appended to the end of authors created via mbox. This is used to
+provide a way to distinguish authors via email and authors via normal Pelican,
+if you want that. It is now disabled by default.
 
 ```
 MBOX_MARKDOWNIFY = False
