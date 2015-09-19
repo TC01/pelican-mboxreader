@@ -2,4 +2,6 @@
 *.pyc
 *.mbox
 
+# Some setuptools things.
 build/
+*.egg-info
