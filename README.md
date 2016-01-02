@@ -4,16 +4,38 @@ This pelican plugin adds a generator that can load a Unix style mbox file and
 generate articles from all the entries in the mailbox.
 
 This was written to support easy interoperation between pelican and mailman
-(which creates mbox archives).
+(which creates mbox archives). Future work, if done, will involve improving the
+way (plaintext) email is turned into HTML and adding support for additional
+mail directory types.
 
 ## Do I need other dependencies?
 
 Yes; you need python's dateutil module (so dates in emails can be parsed without
 assuming a standard time format).
 
+The ```setup.py``` script will automatically take care of this when installing
+the package.
+
+## How do I install it?
+
+pelican-mboxreader is packaged and available from PyPI; to install it, you can
+simply run the following command: ```pip install pelican-mboxreader```.
+
+Alternatively, you can clone the git repository, build it, and install it
+yourself by running ```python setup.py install```.
+
 ## How does it work?
 
-Install the plugin like any other pelican plugin.
+Enable it using any other Pelican plugin, though note that the plugin is named
+```pelican_mboxreader```, then add it to the configuration as follows:
+
+```
+PLUGINS = [
+    # ...
+    'pelican_mboxreader',
+    # ...
+]
+```
 
 Then add the following settings to the configuration:
 
