@@ -163,14 +163,13 @@ class MboxGenerator(ArticlesGenerator):
                     charset = message.get_content_charset()
                     if charset is None or charset == 'x-unknown':
                         charset = 'us-ascii'
-                    else:
-                        payload = part.get_payload(decode=True)
-                        if part.get_content_type() == 'text/plain':
-                            plaintext = unicode(payload, charset, "ignore")
-                            plaintext = plaintext.encode('ascii', 'replace')
-                        if part.get_content_type() == 'text/html':
-                            html = unicode(payload, charset, "ignore")
-                            html = html.encode('ascii', 'replace')
+                    payload = part.get_payload(decode=True)
+                    if part.get_content_type() == 'text/plain':
+                        plaintext = unicode(payload, charset, "ignore")
+                        plaintext = plaintext.encode('ascii', 'replace')
+                    if part.get_content_type() == 'text/html':
+                        html = unicode(payload, charset, "ignore")
+                        html = html.encode('ascii', 'replace')
                 if plaintext is None and html is None:
                     continue
                 elif plaintext is None:
@@ -254,8 +253,8 @@ class MboxGenerator(ArticlesGenerator):
             all_articles.extend(new_articles)
 
             # Log that we did stuff.
-            print('Read in %d messages from %s and converted to articles in ' +
-                  'category %s.' % (len(new_articles), mboxPath, mboxCategory))
+            print(('Read in %d messages from %s and converted to articles in ' +
+                  'category %s.') % (len(new_articles), mboxPath, mboxCategory))
         print('Read in %d messages from all mailboxes.' % (len(all_articles)))
 
         # Continue with the rest of ArticleGenerator, code adapted from:
