@@ -25,6 +25,7 @@ import mailbox
 import logging
 import os
 import pytz
+import sys
 
 # Other dependency! dateutil.
 try:
@@ -245,7 +246,9 @@ class MboxGenerator(ArticlesGenerator):
             return
 
         all_articles = []
-        for i in xrange(len(mboxPaths)):
+        # To avoid pulling in a dependency, define this convenient lambda.
+        future_range = lambda x: range(x) if not sys.version_info.major <= 2 else xrange(x)
+        for i in future_range(len(mboxPaths)):
             mboxPath = mboxPaths[i]
             mboxCategory = mboxCategories[i]
 
