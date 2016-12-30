@@ -69,11 +69,11 @@ def plaintext_to_html(plaintext, markdownify=False):
         content = Markdown().convert(plaintext)
     except:
         content = ''
-        plaintext = plaintext.replace('\r\n', '\n')
-        strings = plaintext.split('\n\n')
+        plaintext = plaintext.replace("\r\n", "\n")
+        strings = plaintext.split("\n\n")
         for paragraph in strings:
-            paragraph = paragraph.replace('\n', '<br/>')
-            content += '<p>' + paragraph + '</p>\n\n'
+            paragraph = paragraph.replace("\n", "<br/>")
+            content += "<p>" + paragraph + "</p>\n\n"
 
     return content
 
@@ -161,30 +161,42 @@ class MboxGenerator(ArticlesGenerator):
                 plaintext = None
                 html = None
                 for part in message.get_payload():
-                    charset = message.get_content_charset()
-                    if charset is None or charset == 'x-unknown':
-                        charset = 'us-ascii'
                     payload = part.get_payload(decode=True)
+                    if payload is not None:
+                        for charset in message.get_charsets():
+                            if charset is not None and charset != 'x-unknown':
+                                # These probably shoudldn't be 'ignore'.
+                                if sys.version_info.major >= 3 and not isinstance(payload, str):
+                                    payload = payload.decode(charset, "ignore")
+                                elif sys.version_info.major <= 2:
+                                    payload = unicode(payload, charset, "ignore").encode("ascii", "replace")
                     if part.get_content_type() == 'text/plain':
-                        plaintext = unicode(payload, charset, "ignore")
-                        plaintext = plaintext.encode('ascii', 'replace')
+                        plaintext = payload
                     if part.get_content_type() == 'text/html':
-                        html = unicode(payload, charset, "ignore")
-                        html = html.encode('ascii', 'replace')
+                        html = payload
                 if plaintext is None and html is None:
                     continue
                 elif plaintext is None:
                     content = html
                 else:
+                    if sys.version_info.major >= 3 and isinstance(plaintext, bytes):
+                        plaintext = plaintext.decode("utf-8", "ignore")
                     content = plaintext_to_html(plaintext, markdownify)
             else:
-                charset = message.get_content_charset()
-                if charset is None or charset == 'x-unknown':
-                    charset = 'us-ascii'
                 payload = message.get_payload(decode=True)
-                plaintext = unicode(payload, charset, "ignore")
-                plaintext = plaintext.encode('ascii', 'replace')
-                content = plaintext_to_html(plaintext, markdownify)
+                for charset in message.get_charsets():
+                    if charset is not None and charset != 'x-unknown':
+                        if sys.version_info.major < 3:
+                            payload = unicode(payload, charset, "ignore").encode("ascii", "replace")
+                        else:
+                            payload = payload.decode(charset)
+                if sys.version_info.major >= 3 and isinstance(payload, bytes):
+                    payload = payload.decode("utf-8", "ignore")
+                content = plaintext_to_html(payload, markdownify)
+
+            # On python 2, it seems that we need to do this final check of content.
+            if sys.version_info.major <= 2:
+                content = unicode(content, "us-ascii", "ignore").encode("ascii", "replace")
 
             metadata = {'title': subject,
                         'date': date,
