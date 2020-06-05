@@ -40,7 +40,7 @@ except ImportError:
     Markdown = False  # NOQA
 
 # The logger.
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 # Settings methods, adapted from tag-cloud plugin.
